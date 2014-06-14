@@ -65,7 +65,7 @@ class EchonestLocalLibrary(local.Library):
         start = 0
         while True:
             result = self._en.get('tasteprofile/read', id=self._profile_id,
-                                 start=start, results=BATCH_SIZE)
+                                  start=start, results=BATCH_SIZE)
 
             for item in result['catalog']['items']:
                 timestamp = datetime.datetime.strptime(
@@ -81,6 +81,16 @@ class EchonestLocalLibrary(local.Library):
         item = {'item_id': uri_to_item_id(track.uri), 'url': track.uri}
 
         # TODO: add fields that don't cleanly map to the key value fields
+        # TODO: consider using custom item keyvalues to serialize track.
+        # TODO: respect notes in update dev docs:
+        # - song_name, song_id and track_id are mutually exclusive
+        # - artist info should not be set if a song_id or track_id is given
+        # - artist_name and artist_id are mutually exclusive
+        # This probably also means we should consider checking ticket status
+        # and resubmitting tracks that did not resolve without IDs. Or just
+        # see if we can get away with setting everything and having echonest
+        # figure it out.
+
         item['song_name'] = track.name
         item['release'] = track.album.name
         item['genre'] = track.genre
@@ -118,6 +128,7 @@ class EchonestLocalLibrary(local.Library):
 
     def clear(self):
         profile = self._en.get('tasteprofile/profile', name=TASTEPROFILE_NAME)
+        profile_id = profile['catalog']['id']
         pprint.pprint(profile)
-        result = self._en.post('tasteprofile/delete', id=profile['catalog']['id'])
+        result = self._en.post('tasteprofile/delete', id=profile_id)
         pprint.pprint(result)
